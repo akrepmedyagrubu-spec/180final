@@ -1,14 +1,24 @@
 FROM alpine:latest
 
-RUN apk add --no-cache ffmpeg bash curl
+# FFmpeg, bash, curl ve Nginx yükle
+RUN apk add --no-cache ffmpeg bash curl nginx
 
 WORKDIR /app
 
-# Bütün dosyaları tek repodan kopyala
+# Nginx konfigürasyonu
+RUN mkdir -p /run/nginx /app/hls
+RUN echo 'server { \
+    listen 8080; \
+    location / { \
+        root /app; \
+        add_header Access-Control-Allow-Origin *; \
+    } \
+}' > /etc/nginx/http.d/default.conf
+
 COPY stream.sh /app/stream.sh
-COPY playlist.txt /app/playlist.txt
-RUN chmod +x /app/stream.sh && mkdir -p /app/hls
+RUN chmod +x /app/stream.sh
 
-VOLUME /app/hls
+EXPOSE 8080
 
-CMD ["/bin/bash", "/app/stream.sh"]
+# Hem Nginx hem de stream.sh betiğini aynı anda başlat
+CMD nginx && /bin/bash /app/stream.sh
