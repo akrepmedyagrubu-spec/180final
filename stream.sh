@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Aynı repodaki playlist.txt'nin RAW linkini buraya yapıştır
-PLAYLIST_URL="${PLAYLIST_URL:-https://github.com/akrepmedyagrubu-spec/180final/blob/main/playlist.txt}"
+PLAYLIST_URL="${PLAYLIST_URL:-https://raw.githubusercontent.com/akrepmedyagrubu-spec/180final/refs/heads/main/playlist.txt}"
 OUTPUT_DIR="/app/hls"
 
 mkdir -p "$OUTPUT_DIR"
