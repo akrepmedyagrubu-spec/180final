@@ -5,29 +5,30 @@ OUTPUT_DIR="/app/hls"
 
 mkdir -p "$OUTPUT_DIR"
 
-echo "=== Hızlı IPTV Stream Motoru Başlatılıyor ==="
+echo "=== Ultra Hafif IPTV Motoru Baslatiliyor ==="
 
 while true; do
-    echo "[$(date '+%H:%M:%S')] Playlist güncelleniyor..."
+    echo "[$(date '+%H:%M:%S')] Playlist indiriliyor..."
     
-    # GitHub'dan playlist'i çek
     curl -sSL "$PLAYLIST_URL" | grep -v '^#' | grep -v '^[[:space:]]*$' | sed "s/'/\\\\'/g" | sed "s/^/file '/" | sed "s/$/'/" > /app/ffmpeg_playlist.txt
     
     if [ ! -s /app/ffmpeg_playlist.txt ]; then
-        echo "[HATA] Playlist boş! 5 saniye sonra tekrar deneniyor..."
+        echo "[HATA] Playlist bos! 5 saniye sonra tekrar deneniyor..."
         sleep 5
         continue
     fi
 
-    echo "[$(date '+%H:%M:%S')] FFmpeg Yayını (Sıfır CPU Yükü) Başlatılıyor..."
+    echo "[$(date '+%H:%M:%S')] FFmpeg (540p 25fps) Baslatiliyor..."
     
-    # -c copy ile işlemciyi hiç yormadan akıcı yayın yapılır
+    # 540p çözünürlük, 25 FPS ve düşük bit oranı ile akıcı yayın
     ffmpeg -hide_banner -loglevel warning -re \
         -protocol_whitelist file,http,https,tcp,tls,crypto \
         -f concat -safe 0 \
         -i /app/ffmpeg_playlist.txt \
-        -c:v copy \
-        -c:a copy \
+        -vf "scale=960:540:force_original_aspect_ratio=decrease,pad=960:540:(ow-iw)/2:(oh-ih)/2,fps=25" \
+        -c:v libx264 -preset ultrafast -tune zerolatency -b:v 800k -maxrate 1000k -bufsize 1500k \
+        -g 50 -sc_threshold 0 \
+        -c:a aac -b:a 64k -ac 2 -ar 44100 \
         -f hls \
         -hls_time 4 \
         -hls_list_size 5 \
@@ -35,6 +36,6 @@ while true; do
         -hls_segment_filename "$OUTPUT_DIR/segment_%03d.ts" \
         "$OUTPUT_DIR/live.m3u8"
 
-    echo "[$(date '+%H:%M:%S')] Döngü bitti. 3 saniye sonra yenileniyor..."
+    echo "[$(date '+%H:%M:%S')] Döngü bitti/koptu. 3 saniye sonra yenileniyor..."
     sleep 3
 done
